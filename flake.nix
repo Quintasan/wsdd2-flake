@@ -1,14 +1,25 @@
 {
   description = "A flake to build wsdd2";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+  inputs = {
+    nixpkgs = {
+      url = "github:NixOS/nixpkgs/nixos-23.11";
+    };
+    flake-utils = {
+      url = "github:numtide/flake-utils";
+    };
+  };
 
-  outputs = { self, nixpkgs }: {
-    defaultPackage.x86_64-linux =
-    	with import nixpkgs { system = "x86_64-linux"; };
-        stdenv.mkDerivation {
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem(system:
+      let
+        inherit (nixpkgs) lib;
+	pkgs = nixpkgs.legacyPackages.${system};
+        packageName = "wsdd2";
+      in {
+        packages.${packageName} = pkgs.stdenv.mkDerivation {
           name = "wsdd2";
-          src = fetchFromGitHub {
+          src = pkgs.fetchFromGitHub {
             owner = "Netgear";
             repo = "wsdd2";
             rev = "master";
@@ -18,7 +29,7 @@
           CFLAGS = "-O2";
           installFlags = [ "PREFIX=${placeholder "out"}" ];
         
-          meta = with lib; {
+          meta = with pkgs.lib; {
             description = "WSD/LLMNR Discovery/Name Service Daemon";
             longDescription = ''
             	The primary purpose of this project is to enable WSD on Samba servers so that network shares hosted on a Unix box can appear in Windows File Explorer / Network.
@@ -29,5 +40,8 @@
             platforms = platforms.linux;
           };
         };
-  };
+
+        defaultPackage = self.packages.${system}.${packageName};
+      }
+    );
 }
