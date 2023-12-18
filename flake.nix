@@ -28,5 +28,6 @@
             CFLAGS = "-O2";
             installFlags = [ "PREFIX=${placeholder "out"}" ];
           };
+        defaultPackage = self.packages.${system}.${packageName};
       });
 }
